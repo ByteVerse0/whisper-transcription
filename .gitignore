@@ -1,0 +1,17 @@
+# Private lab diary: stays on the local machine, never published
+diario_laboratorio.md
+
+# Transcription outputs and source media
+trascrizioni/
+*.mkv
+*.mp4
+*.txt
+*.srt
+
+# Python
+__pycache__/
+.venv/
+
+# Secrets and OS files
+.env
+.DS_Store

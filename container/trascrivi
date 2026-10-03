@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# trascrivi - transcribe an audio/video file with faster-whisper on the GPU.
+#
+# Usage: trascrivi FILE [--lingua CODE]
+#
+# Writes FILE.txt (plain text, one line per segment) and FILE.srt (subtitles
+# with timestamps) next to the input file, replacing its extension.
+#
+# Install inside the container:
+#   cp trascrivi /usr/local/bin/trascrivi && chmod +x /usr/local/bin/trascrivi
+set -eo pipefail
+
+VENV="/root/whisper-env"
+LANG_CODE="it"
+FILE=""
+
+usage() {
+  echo "Usage: trascrivi FILE [--lingua CODE]"
+  echo "  FILE           audio or video file to transcribe"
+  echo "  --lingua CODE  ISO 639-1 language code (default: it)"
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --lingua)
+      if [ -z "${2:-}" ]; then
+        echo "Error: --lingua needs a language code" >&2
+        exit 1
+      fi
+      LANG_CODE="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      FILE="$1"
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
+  usage >&2
+  exit 1
+fi
+
+# The activate script of the venv also exports LD_LIBRARY_PATH for cuBLAS/cuDNN.
+# shellcheck disable=SC1091
+source "$VENV/bin/activate"
+
+python3 - "$FILE" "$LANG_CODE" <<'PY'
+import os
+import sys
+import time
+
+from faster_whisper import WhisperModel
+
+path, language = sys.argv[1], sys.argv[2]
+base = os.path.splitext(path)[0]
+
+
+def srt_time(seconds):
+    """Format seconds as an SRT timestamp: HH:MM:SS,mmm."""
+    ms = int(round(seconds * 1000))
+    hours, ms = divmod(ms, 3_600_000)
+    minutes, ms = divmod(ms, 60_000)
+    secs, ms = divmod(ms, 1000)
+    return f"{hours:02d}:{minutes:02d}:{secs:02d},{ms:03d}"
+
+
+# int8 weights with float16 compute: about 2 GB of VRAM for large-v3.
+model = WhisperModel("large-v3", device="cuda", compute_type="int8_float16")
+
+started = time.time()
+segments, info = model.transcribe(
+    path,
+    language=language,
+    beam_size=5,
+    vad_filter=True,  # skip silences, reduces hallucinated text
+    vad_parameters=dict(min_silence_duration_ms=500),
+)
+print(f"Language: {info.language} (probability {info.language_probability:.2f})", flush=True)
+print(f"Audio duration: {info.duration:.0f} s", flush=True)
+
+count = 0
+with open(base + ".txt", "w", encoding="utf-8") as txt, open(base + ".srt", "w", encoding="utf-8") as srt:
+    for count, segment in enumerate(segments, 1):
+        text = segment.text.strip()
+        txt.write(text + "\n")
+        srt.write(f"{count}\n{srt_time(segment.start)} --> {srt_time(segment.end)}\n{text}\n\n")
+        if count % 100 == 0:
+            print(f"  {count} segments, at {srt_time(segment.end)[:8]}", flush=True)
+
+print(f"Done: {count} segments in {time.time() - started:.0f} s", flush=True)
+print(f"Written: {base}.txt and {base}.srt", flush=True)
+PY
