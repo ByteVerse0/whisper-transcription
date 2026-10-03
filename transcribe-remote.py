@@ -54,7 +54,7 @@ PROXMOX_HOST_LAN = os.environ.get("PROXMOX_HOST_LAN")
 PROXMOX_HOST_TAILSCALE = os.environ.get("PROXMOX_HOST_TAILSCALE")
 PROXMOX_USER = "root"
 LXC_ID = "103"
-REMOTE_CMD = "/usr/local/bin/trascrivi"  # name of the transcription script inside the container
+REMOTE_CMD = "/usr/local/bin/transcribe"  # name of the transcription script inside the container
 OUTPUT_DIR_NAME = "trascrizioni"  # created next to the original files
 
 MEDIA_EXTENSIONS = {

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# trascrivi - transcribe an audio/video file with faster-whisper on the GPU.
+# transcribe - transcribe an audio/video file with faster-whisper on the GPU.
 #
-# Usage: trascrivi FILE [--lingua CODE]
+# Usage: transcribe FILE [--lingua CODE]
 #
 # Writes FILE.txt (plain text, one line per segment) and FILE.srt (subtitles
 # with timestamps) next to the input file, replacing its extension.
 #
 # Install inside the container:
-#   cp trascrivi /usr/local/bin/trascrivi && chmod +x /usr/local/bin/trascrivi
+#   cp transcribe /usr/local/bin/transcribe && chmod +x /usr/local/bin/transcribe
 set -eo pipefail
 
 VENV="/root/whisper-env"
@@ -15,7 +15,7 @@ LANG_CODE="it"
 FILE=""
 
 usage() {
-  echo "Usage: trascrivi FILE [--lingua CODE]"
+  echo "Usage: transcribe FILE [--lingua CODE]"
   echo "  FILE           audio or video file to transcribe"
   echo "  --lingua CODE  ISO 639-1 language code (default: it)"
 }

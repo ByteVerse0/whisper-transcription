@@ -7,7 +7,7 @@ Transcribes video and audio recordings (for example lecture recordings in MKV) i
 ```
 Laptop (macOS/Linux)                    Proxmox host                     LXC container (GPU)
 transcribe-remote.py  --SFTP/SSH-->     /tmp  --pct push-->              /root/<file>
-                                                                          trascrivi (faster-whisper large-v3)
+                                                                          transcribe (faster-whisper large-v3)
 <folder>/trascrizioni/*.txt,*.srt  <--  /tmp  <--pct pull--              /root/<file>.txt, .srt
 ```
 
@@ -127,9 +127,9 @@ The first run downloads the model (about 3 GB). Counting CUDA devices is not eno
 From the Proxmox host, with this repository copied to it:
 
 ```bash
-pct push 103 container/trascrivi /usr/local/bin/trascrivi
-pct exec 103 -- chmod +x /usr/local/bin/trascrivi
-pct exec 103 -- /usr/local/bin/trascrivi --help
+pct push 103 container/transcribe /usr/local/bin/transcribe
+pct exec 103 -- chmod +x /usr/local/bin/transcribe
+pct exec 103 -- /usr/local/bin/transcribe --help
 ```
 
 ### 6. Set up the client
@@ -167,12 +167,12 @@ To transcribe by hand from the Proxmox host:
 
 ```bash
 pct push 103 /tmp/video.mkv /root/video.mkv
-pct exec 103 -- trascrivi /root/video.mkv
+pct exec 103 -- transcribe /root/video.mkv
 pct pull 103 /root/video.txt /tmp/video.txt
 pct pull 103 /root/video.srt /tmp/video.srt
 ```
 
-Language defaults to Italian; use `trascrivi FILE --lingua en` for another language.
+Language defaults to Italian; use `transcribe FILE --lingua en` for another language.
 
 ## Settings
 
